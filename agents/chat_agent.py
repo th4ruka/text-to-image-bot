@@ -14,7 +14,7 @@ from prompts.chat_agent_prompts import SYSTEM_MESSAGE
 load_dotenv()
 tools: Sequence = [generate_image]
 # Choose the LLM that will drive the agent
-chat = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0)
+chat = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0.7)
 prompt = ChatPromptTemplate.from_messages(
     [
         ("system", SYSTEM_MESSAGE),
