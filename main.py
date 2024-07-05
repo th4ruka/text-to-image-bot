@@ -4,6 +4,7 @@
 
 import os
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from uvicorn import run
 from models.models import HumanMessageModel, AIMessageModel
 from handlers.chat_handler import chat_agent_response
@@ -29,6 +30,14 @@ app = FastAPI(
     description=description,
     version="0.1.0",
     openapi_tags=tags_metadata
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
