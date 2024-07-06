@@ -15,7 +15,7 @@ description = """
 GAN Based Text to Image Synthesizer API
 ### Description
 
-Generate images according to text descriptions.
+Use this API to generate images according to text descriptions.
 
 """
 tags_metadata = [
