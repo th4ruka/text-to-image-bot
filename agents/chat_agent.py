@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from tools.stabilityai_text_to_image import generate_image
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.memory import ChatMessageHistory
-from prompts.chat_agent_prompts import SYSTEM_MESSAGE_V2
+from prompts.chat_agent_prompts import SYSTEM_MESSAGE_V3
 
 load_dotenv()
 tools: Sequence = [generate_image]
@@ -17,7 +17,7 @@ tools: Sequence = [generate_image]
 chat = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0.7)
 prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", SYSTEM_MESSAGE_V2),
+        ("system", SYSTEM_MESSAGE_V3),
         MessagesPlaceholder(variable_name="messages"),
         MessagesPlaceholder(variable_name="agent_scratchpad")
     ]
