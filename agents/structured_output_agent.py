@@ -1,6 +1,3 @@
-#  Copyright (c) 2024. Tharuka Pavith
-#  For the full license text, see the LICENSE file.
-#
 
 from typing import Sequence
 from dotenv import load_dotenv
@@ -14,9 +11,12 @@ from langchain.agents.format_scratchpad import format_to_openai_function_message
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 from langchain.memory import ChatMessageHistory
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage
+from langchain_core.messages import HumanMessage, AIMessage
 
+# Load environment variables
 load_dotenv()
+
+# Tool for generating images
 tools: Sequence = [generate_image]
 
 # Choose the LLM that will drive the agent
@@ -60,18 +60,18 @@ def parse(output):
 llm_with_tools = llm.bind_functions([generate_image, Response])
 
 agent = (
-            {
-                "input": lambda x: x["input"],
-                "chat_history": lambda x: x["chat_history"],
-                # Format agent scratchpad from intermediate steps
-                "agent_scratchpad": lambda x: format_to_openai_function_messages(
-                    x["intermediate_steps"]
-                ),
-            }
-            | prompt
-            | llm_with_tools
-            | parse
-    )
+        {
+            "input": lambda x: x["input"],
+            "chat_history": lambda x: x["chat_history"],
+            # Format agent scratchpad from intermediate steps
+            "agent_scratchpad": lambda x: format_to_openai_function_messages(
+                x["intermediate_steps"]
+            ),
+        }
+        | prompt
+        | llm_with_tools
+        | parse
+)
 
 
 def get_openai_tools_agent() -> AgentExecutor:
@@ -88,20 +88,40 @@ if __name__ == "__main__":
         user_msg = input("[user]>>> ")
         if user_msg == "/exit":
             break
-        # chat_history.add_user_message(user_msg)
-        result = agent_executor.invoke(
-            {"input": [HumanMessage(user_msg)], "chat_history": chat_history.messages},
-            return_only_outputs=True,
-        )
+
+        # Retry logic for fetching response
+        result = None
+        for attempt in range(2):  # Retry up to 2 times
+            try:
+                result = agent_executor.invoke(
+                    {"input": [HumanMessage(user_msg)], "chat_history": chat_history.messages},
+                    return_only_outputs=True,
+                )
+                if "assistant" in result and len(result["assistant"].strip()) > 10:  # Ensure valid response
+                    break
+            except Exception as e:
+                print(f"Attempt {attempt + 1} failed: {e}")
+
+        # Add user message to history
         chat_history.add_user_message(user_msg)
 
         try:
-            chat_history.add_ai_message(result["assistant"]
-                                        + "| url: " + result["url"])
-        except KeyError as key_err:
-            chat_history.add_ai_message(result["assistant"])
-        except Exception as e:
-            print("Error adding ai message: ", e)
+            if result:
+                assistant_message = result.get("assistant", "No response from assistant")
+                url = result.get("url", "")
 
-        print(result)
-        # print("[assistant]>>> ", result["output"])
+                # Log and handle responses with URLs
+                if url:
+                    chat_history.add_ai_message(assistant_message + "| url: " + url)
+                else:
+                    chat_history.add_ai_message(assistant_message)
+
+                print(f"[assistant]>>> {assistant_message}")
+                if url:
+                    print(f"Image URL: {url}")
+            else:
+                print("[assistant]>>> Sorry, I couldn't process your request.")
+        except KeyError as key_err:
+            print(f"[assistant]>>> Incomplete response. KeyError: {key_err}")
+        except Exception as e:
+            print("Error adding AI message: ", e)
